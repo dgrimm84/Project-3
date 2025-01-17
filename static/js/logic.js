@@ -1,78 +1,155 @@
+// Grant CesiumJS access to your ion assets
+Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxYTgyNjM5Ny0wOTc3LTQ2MzQtYmZhOC04YjkzMTgwNTkwODUiLCJpZCI6MjY5MzE3LCJpYXQiOjE3MzY5OTI1NDV9.BhvC1tYcm7aMtL-Etf7E1lxuT7VmTBgZoY1w8I_wI5E"; // Replace with your actual Cesium ion token
+
+// Initialize Cesium viewer
+const viewer = new Cesium.Viewer("cesiumContainer", {
+  terrainProvider: Cesium.createWorldTerrain(),
+  baseLayerPicker: false, // Disable base layer picker
+  timeline: false,
+  animation: false,
+});
+
+// API and data setup
 const apiKey = 'Z4ZXb0nUnTMOq6cljxbN1cFD0mk6kLaQBzkqehf3'; // Replace with your actual API key
-const parksUrl = `https://developer.nps.gov/api/v1/parks?api_key=${apiKey}`;
-//const feesUrl = `https://developer.nps.gov/api/v1/feespasses?api_key=${apiKey}`;
-const coord = [41.517202, -97.193072]; // Default coordinates for map center
-const map = L.map('map').setView(coord, 3);
-
-// Define tile layers (base maps)
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map); // Add tile layer to map
-
-const topo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles &copy; <a href="https://www.esri.com">Esri</a> &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
-});
-
-const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles &copy; <a href="https://www.esri.com">Esri</a> &mdash; Source: Esri, Maxar, NOAA, USGS, and others'
-});
-
-// Define custom icon using the evergreen tree SVG
-const treeIcon = L.icon({
-  iconUrl: 'https://www.svgrepo.com/show/312123/evergreen-tree.svg', // URL of the SVG
-  iconSize: [32, 32], // Set the size of the icon (width, height)
-  iconAnchor: [16, 32], // Anchor the icon at its base
-  popupAnchor: [0, -32] // Position of the popup relative to the icon
-});
-
-// Create a layer group for park data
-const parkLayer = L.layerGroup();
+const parksUrl = `https://developer.nps.gov/api/v1/parks?limit=500&api_key=${apiKey}`;
 
 // Fetch park data from NPS API
 fetch(parksUrl)
-  .then(response => response.json())
-  .then(data => {
-    // Ensure that you check the structure of the data before attempting to access it
+  .then((response) => response.json())
+  .then((data) => {
     if (data.data && Array.isArray(data.data)) {
-      // Loop through each park in the response and add markers to the layer group
-      data.data.forEach(park => {
-        const lat = park.latitude;
-        const lon = park.longitude;
+      data.data.forEach((park) => {
+        const lat = parseFloat(park.latitude);
+        const lon = parseFloat(park.longitude);
         const parkName = park.fullName;
-        const entranceFee = park.entranceFees.map(fee => fee.cost)
-        const entrancePass = park.entrancePasses.map(fee => fee.cost)
-        const parkEmail = park.contacts.emailAddresses[0].emailAddress
+        const entranceFee = park.entranceFees.map((fee) => fee.cost);
+        const entrancePass = park.entrancePasses.map((fee) => fee.cost);
+        const parkUrl = park.url;
+        const parkCode = park.parkCode;
 
-        // Add marker for each park if coordinates exist
-        if (lat && lon) {
-          L.marker([lat, lon], { icon: treeIcon }) // Use the custom icon here
-            .bindPopup(`
-            <h3>${parkName}</h3>
-            <br>Entrance fees: ${entranceFee[0] || "None"}</b>
-            <br>Annual Pass fee: ${entrancePass[0] || "None"}</b>
-            <br>Park Email Address: ${parkEmail || "None"}</b>
-            `)
-            .addTo(parkLayer); // Add to the park layer group
+        // Parse entrance fee (ensure it's a valid number)
+        const feeAmount = parseFloat(entranceFee[0]) || 0;
+
+        // Determine the icon filter based on the fee amount
+        let parkIconUrl;
+        if (feeAmount === 0) {
+          parkIconUrl = 'static/Images/tree-green.svg';
+        } else if (feeAmount > 0 && feeAmount <= 10) {
+          parkIconUrl = 'static/Images/tree-yellow.svg';
+        } else if (feeAmount > 10 && feeAmount <= 20) {
+          parkIconUrl = 'static/Images/tree-orange.svg';
+        } else if (feeAmount > 20) {
+          parkIconUrl = 'static/Images/tree-red.svg';
+        }
+
+        let monumentIconUrl;
+        if (feeAmount === 0) {
+          monumentIconUrl = 'static/Images/monument-green.svg';
+        } else if (feeAmount > 0 && feeAmount <= 10) {
+          monumentIconUrl = 'static/Images/monument-yellow.svg';
+        } else if (feeAmount > 10 && feeAmount <= 20) {
+          monumentIconUrl = 'static/Images/monument-orange.svg';
+        } else if (feeAmount > 20) {
+          monumentIconUrl = 'static/Images/monument-red.svg';
+        }
+
+        let memorialIconUrl;
+        if (feeAmount === 0) {
+          memorialIconUrl = 'static/Images/memorial-green.svg';
+        } else if (feeAmount > 0 && feeAmount <= 10) {
+          memorialIconUrl = 'static/Images/memorial-yellow.svg';
+        } else if (feeAmount > 10 && feeAmount <= 20) {
+          memorialIconUrl = 'static/Images/memorial-orange.svg';
+        } else if (feeAmount > 20) {
+          memorialIconUrl = 'static/Images/memorial-red.svg';
+        }
+
+        // Add marker to Cesium globe
+        if (!park.designation.includes('Monument') && park.designation.includes('Park')) {
+          viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(lon, lat),
+            billboard: {
+              image: parkIconUrl,
+              width: 32,
+              height: 32
+            },
+            description: `
+              <h3>${parkName}</h3>
+              <p>Entrance fee: ${entranceFee[0] || "None"}</p>
+              <p>Annual Pass fee: ${entrancePass[0] || "None"}</p>
+              <a href="${parkUrl}" target="_blank">Location Website</a>
+              <br><br><a href="table.html?parkCode=${parkCode}" target="_blank">View Location Details</a>
+            `
+          });
+        }
+
+        if (park.designation.includes('Monument')) {
+          viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(lon, lat),
+            billboard: {
+              image: monumentIconUrl,
+              width: 32,
+              height: 32
+            },
+            description: `
+              <h3>${parkName}</h3>
+              <p>Entrance fee: ${entranceFee[0] || "None"}</p>
+              <p>Annual Pass fee: ${entrancePass[0] || "None"}</p>
+              <a href="${parkUrl}" target="_blank">Location Website</a>
+              <br><br><a href="table.html?parkCode=${parkCode}" target="_blank">View Location Details</a>
+            `
+          });
+        }
+
+        if (park.designation.includes('Memorial') && !park.designation.includes('Monument')) {
+          viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(lon, lat),
+            billboard: {
+              image: memorialIconUrl,
+              width: 32,
+              height: 32
+            },
+            description: `
+              <h3>${parkName}</h3>
+              <p>Entrance fee: ${entranceFee[0] || "None"}</p>
+              <p>Annual Pass fee: ${entrancePass[0] || "None"}</p>
+              <a href="${parkUrl}" target="_blank">Location Website</a>
+              <br><br><a href="table.html?parkCode=${parkCode}" target="_blank">View Location Details</a>
+            `
+          });
         }
       });
     } else {
-      console.error('Invalid data structure:', data);
+      console.error("Invalid data structure:", data);
     }
   })
-  .catch(error => console.error('Error fetching data:', error));
+  .catch((error) => console.error("Error fetching data:", error));
 
-// Add the park layer to the map
-parkLayer.addTo(map);
-
-// Add layer control to toggle layers
-const baseMaps = {
-  "Simple Map": osm,
-  "Topographical Map": topo,
-  "Satellite Map": satellite
-};
-
-const overlayMaps = {
-  'National Parks': parkLayer // Add the park layer to the overlay maps
-};
-
-L.control.layers(baseMaps, overlayMaps).addTo(map);
+// Add a simple legend to the viewer
+const legendContainer = document.createElement("div");
+legendContainer.style.position = "absolute";
+legendContainer.style.bottom = "10px";
+legendContainer.style.left = "10px";
+legendContainer.style.padding = "10px";
+legendContainer.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+legendContainer.style.border = "1px solid #ccc";
+legendContainer.innerHTML = `
+  <h4>Legend</h4>
+  <div style="display: flex; align-items: center; margin-bottom: 8px;">
+    <img src="static/Images/tree-green.svg" style="width: 16px; height: 16px; margin-right: 8px;" />
+    Free ($0)
+  </div>
+  <div style="display: flex; align-items: center; margin-bottom: 8px;">
+    <img src="static/Images/tree-yellow.svg" style="width: 16px; height: 16px; margin-right: 8px;" />
+    $1 - $10
+  </div>
+  <div style="display: flex; align-items: center; margin-bottom: 8px;">
+    <img src="static/Images/tree-orange.svg" style="width: 16px; height: 16px; margin-right: 8px;" />
+    $11 - $20
+  </div>
+  <div style="display: flex; align-items: center;">
+    <img src="static/Images/tree-red.svg" style="width: 16px; height: 16px; margin-right: 8px;" />
+    $21 and above
+  </div>
+`;
+document.body.appendChild(legendContainer);
