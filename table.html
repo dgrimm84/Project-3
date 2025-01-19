@@ -40,11 +40,13 @@
     const apiKey = 'Z4ZXb0nUnTMOq6cljxbN1cFD0mk6kLaQBzkqehf3'; 
     const urlParams = new URLSearchParams(window.location.search);
     const parkCode = urlParams.get('parkCode');
-
+  
+    // Create a list of values to exclude from the API fetch because we don't want them to show
     const excludedAttributes = [
       'id', 'images', 'states', 'latLong', 'parkCode', 'latitude', 'longitude', 'name', 'directionsUrl', 'multimedia', 'relevanceScore'
-    ]; // List of attributes to exclude
+    ]; 
 
+    // Use the parkCode from the selected icon to fetch specific API data to display in the new tab
     if (parkCode) {
       fetch(`https://developer.nps.gov/api/v1/parks?parkCode=${parkCode}&api_key=${apiKey}`)
         .then(response => response.json())
@@ -67,7 +69,7 @@
 
               keyCell.textContent = key;
 
-              // Clean up and handle arrays and objects
+              // This code got complex because the data needed to be formatted properly to be displayed well
               if (key === 'addresses' && Array.isArray(value)) {
                 const list = document.createElement('ul');
                 value.forEach(address => {
@@ -100,14 +102,14 @@
                 const list = document.createElement('ul');
                 value.forEach(item => {
                   const listItem = document.createElement('li');
-                  listItem.textContent = item.name || item.title || item.id || JSON.stringify(item); // Use 'name' or 'title' when available
+                  listItem.textContent = item.name || item.title || item.id || JSON.stringify(item); 
                   list.appendChild(listItem);
                 });
                 valueCell.appendChild(list);
               } else if (typeof value === 'object') {
-                valueCell.textContent = JSON.stringify(value, null, 2); // Format objects neatly
+                valueCell.textContent = JSON.stringify(value, null, 2); // Format objects so they display properly
               } else {
-                valueCell.textContent = value; // Regular value
+                valueCell.textContent = value;
               }
 
               row.appendChild(keyCell);
