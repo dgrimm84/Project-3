@@ -3,24 +3,20 @@ Cesium.Ion.defaultAccessToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxYTgyNjM5Ny0wOTc3LTQ2MzQtYmZhOC04YjkzMTgwNTkwODUiLCJpZCI6MjY5MzE3LCJpYXQiOjE3MzY5OTI1NDV9.BhvC1tYcm7aMtL-Etf7E1lxuT7VmTBgZoY1w8I_wI5E'; // Replace with your actual Cesium ion token
 
 // Initialize the Cesium viewer
-  const viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: Cesium.createWorldTerrain(),
-    baseLayerPicker: false,
-    timeline: false,
-    animation: false,
+const viewer = new Cesium.Viewer('cesiumContainer', {
+  terrainProvider: Cesium.createWorldTerrain(),
+  baseLayerPicker: false,
+  timeline: false,
+  animation: false,
 });
 
 // Without this code, loading location data in a new tab was blocked due to Cesium security
 // This sets the iframe security settings to allow to allow access to the API in new tabs
-viewer.scene.postRender.addEventListener(() => {
-  const iframe = document.querySelector('.cesium-infoBox-iframe');
-  if (iframe && !iframe.hasAttribute('sandbox')) {
-    iframe.setAttribute(
-      'sandbox',
-      'allow-same-origin allow-scripts allow-popups allow-forms'
-    );
-  }
-});
+const iframe = document.getElementsByClassName('cesium-infoBox-iframe')[0];
+iframe.setAttribute(
+  'sandbox',
+  'allow-same-origin allow-scripts allow-popups allow-forms'
+);
 
 // Activate an info box to refresh the Cesium iframe to make sure the changes above are enabled
 viewer.infoBox.frame.src = 'about:blank';
